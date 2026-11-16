@@ -488,6 +488,12 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
     }
 #endif
 
+    // Adreno 508 (sdm630): the tessellation path renderer draws paths as their filled bounding
+    // box (see the matching GrGLCaps workaround).
+    if (skgpu::kQualcomm_VkVendor == properties.vendorID && properties.deviceID == 0x05000800) {
+        fDisableTessellationPathRenderer = true;
+    }
+
     // Defaults to zero since all our workaround checks that use this consider things "fixed" once
     // above a certain api level. So this will just default to it being less which will enable
     // workarounds.

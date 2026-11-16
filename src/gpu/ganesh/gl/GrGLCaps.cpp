@@ -44,6 +44,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdio>
 #include <initializer_list>
 #include <memory>
 
@@ -4576,6 +4577,20 @@ void GrGLCaps::applyDriverCorrectnessWorkarounds(const GrGLContextInfo& ctxInfo,
         ctxInfo.renderer() == GrGLRenderer::kAdreno4xx_other ||  // We get garbage on Adreno405.
         ctxInfo.angleBackend() == GrGLANGLEBackend::kD3D9) {  // D3D9 conic strokes fail.
         fDisableTessellationPathRenderer = true;
+    }
+    // On the Adreno 508 (sdm630) the tessellation path renderer draws paths as their filled
+    // bounding box: the cover pass is not masked by the stencil the fill pass wrote. Charging
+    // bolts and progress arcs come out as solid rectangles. The other path renderers are fine.
+    if (ctxInfo.renderer() == GrGLRenderer::kAdreno5xx_other) {
+        const GrGLubyte* rendererString;
+        GR_GL_CALL_RET(glInterface, rendererString, GetString(GR_GL_RENDERER));
+        int adrenoNumber = 0;
+        if (rendererString &&
+            1 == sscanf(reinterpret_cast<const char*>(rendererString), "Adreno (TM) %d",
+                        &adrenoNumber) &&
+            adrenoNumber == 508) {
+            fDisableTessellationPathRenderer = true;
+        }
     }
     // We found that on Wembley devices (PowerVR GE8320) that using tessellation path renderer would
     // cause lots of rendering errors where it seemed like vertices were in the wrong place. This
